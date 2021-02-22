@@ -1,11 +1,11 @@
 package emoji
 
-type emoji struct {
-	emoji   []byte
-	english []byte
+type Emoji struct {
+	emoji  []byte
+	markup []byte
 }
 
-var emojis []emoji = []emoji{
+var emojis []Emoji = []Emoji{
 	{[]byte("😊"), []byte(":blush:")},
 	{[]byte("😃"), []byte(":smiley:")},
 	{[]byte("☺️"), []byte(":relaxed:")},

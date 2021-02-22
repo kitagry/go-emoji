@@ -7,13 +7,18 @@ import (
 )
 
 type Replacer struct {
-	preSrc []byte
+	mapMarkupToEmoji map[string]Emoji
+	preSrc           []byte
 }
 
 var _ transform.Transformer = (*Replacer)(nil)
 
 func NewReplacer() *Replacer {
-	return &Replacer{}
+	mapMarkupToEmoji := make(map[string]Emoji, len(emojis))
+	for _, e := range emojis {
+		mapMarkupToEmoji[string(e.markup)] = e
+	}
+	return &Replacer{mapMarkupToEmoji: mapMarkupToEmoji}
 }
 
 // Transform implements transform.Transformer.Transform.
@@ -77,10 +82,9 @@ func (r *Replacer) transform(dst, src []byte, atEOF bool) (nDst, nSrc int, preSr
 
 		eng := src[nSrc : nSrc+length]
 		target := eng
-		for _, e := range emojis {
-			if bytes.Compare(eng, e.english) == 0 {
-				target = e.emoji
-			}
+		emoji, ok := r.mapMarkupToEmoji[string(eng)]
+		if ok {
+			target = emoji.emoji
 		}
 		copied = copy(dst[nDst:], target)
 		nDst += copied
