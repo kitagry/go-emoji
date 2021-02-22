@@ -108,6 +108,62 @@ func TestReplacer(t *testing.T) {
 	}
 }
 
+func TestReplacer_TransformFlow(t *testing.T) {
+	type flow []struct {
+		dst, src []byte
+		atEOF    bool
+
+		nSrc int
+		out  []byte
+		err  error
+	}
+	tests := map[string]struct {
+		flow flow
+	}{
+		"two flow": {
+			flow: flow{
+				{
+					dst:   make([]byte, 0),
+					src:   []byte(":+1"),
+					atEOF: false,
+					nSrc:  3,
+					out:   []byte(""),
+					err:   transform.ErrShortSrc,
+				},
+				{
+					dst:   make([]byte, 4),
+					src:   []byte(":"),
+					atEOF: true,
+					nSrc:  1,
+					out:   []byte("👍"),
+					err:   nil,
+				},
+			},
+		},
+	}
+
+	for n, tt := range tests {
+		t.Run(n, func(t *testing.T) {
+			r := emoji.NewReplacer()
+			for _, f := range tt.flow {
+				nDst, nSrc, err := r.Transform(f.dst, f.src, f.atEOF)
+				if nDst != len(f.out) {
+					t.Errorf("nDst expected %d, got %d", len(f.out), nDst)
+				}
+				if !bytes.Equal(f.dst[:nDst], f.out) {
+					t.Errorf("dst expected %v, got %v", f.out, f.dst[:nDst])
+				}
+				if nSrc != f.nSrc {
+					t.Errorf("nSrc expected %d, got %d", f.nSrc, nSrc)
+				}
+				if err != f.err {
+					t.Errorf("error expected %v, got %v", f.err, err)
+				}
+			}
+		})
+	}
+}
+
 func TestReplacerWithReader(t *testing.T) {
 	tests := map[string]struct {
 		r io.Reader

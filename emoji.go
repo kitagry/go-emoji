@@ -19,6 +19,27 @@ func NewReplacer() *Replacer {
 // Transform implements transform.Transformer.Transform.
 // Transform replaces markdown emoji markup to emoji.
 func (r *Replacer) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error) {
+	_src := src
+	if len(r.preSrc) != 0 {
+		_src = make([]byte, len(r.preSrc)+len(src))
+		copy(_src, r.preSrc)
+		copy(_src[len(r.preSrc):], src)
+	}
+
+	var preSrc []byte
+	nDst, nSrc, preSrc, err = r.transform(dst, _src, atEOF)
+
+	if nSrc < len(r.preSrc) {
+		nSrc = 0
+		r.preSrc = r.preSrc[nSrc:]
+	} else {
+		nSrc -= len(r.preSrc)
+		r.preSrc = preSrc
+	}
+	return
+}
+
+func (r *Replacer) transform(dst, src []byte, atEOF bool) (nDst, nSrc int, preSrc []byte, err error) {
 	for {
 		offset, length := findEmojiMarkupPosition(src[nSrc:])
 		if offset == -1 {
@@ -43,7 +64,7 @@ func (r *Replacer) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err e
 
 		if length == -1 {
 			if !atEOF {
-				r.preSrc = src[nSrc:]
+				preSrc = src[nSrc:]
 				nSrc += len(src[nSrc:])
 				err = transform.ErrShortSrc
 			} else {
