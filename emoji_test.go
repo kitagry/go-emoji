@@ -65,6 +65,15 @@ func TestReplacer(t *testing.T) {
 			expected: []byte("LGTM"),
 			hasErr:   true,
 		},
+		"not completed emoji": {
+			src:      []byte(":+1"),
+			dst:      make([]byte, 100),
+			atEOF:    false,
+			nsrc:     3,
+			ndst:     0,
+			expected: []byte(""),
+			hasErr:   true,
+		},
 	}
 
 	for n, tt := range tests {

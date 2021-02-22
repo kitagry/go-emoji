@@ -7,6 +7,7 @@ import (
 )
 
 type Replacer struct {
+	preSrc []byte
 }
 
 var _ transform.Transformer = (*Replacer)(nil)
@@ -18,13 +19,11 @@ func NewReplacer() *Replacer {
 // Transform implements transform.Transformer.Transform.
 // Transform replaces markdown emoji markup to emoji.
 func (r *Replacer) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error) {
-	colon := []byte(":")
 	for {
-		n := bytes.Index(src[nSrc:], colon)
-		// not found
-		if n == -1 {
+		start, end := findEmojiMarkupPosition(src[nSrc:])
+		if start == -1 {
 			copied := copy(dst[nDst:], src[nSrc:])
-			nSrc += copied
+			nSrc += len(src[nSrc:])
 			nDst += copied
 			if copied != len(src[nSrc:]) {
 				err = transform.ErrShortDst
@@ -32,26 +31,29 @@ func (r *Replacer) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err e
 			return
 		}
 
-		m := bytes.Index(src[nSrc+n+1:], colon)
-		// not found
-		if m == -1 {
-			copied := copy(dst[nDst:], src[:n])
-			nSrc += copied
-			nDst += copied
-			err = transform.ErrShortSrc
+		if end == -1 {
+			if !atEOF {
+				r.preSrc = src[nSrc:]
+				nSrc = len(src[nSrc:])
+				err = transform.ErrShortSrc
+			} else {
+				copied := copy(dst[nDst:], src[:start])
+				nSrc += start
+				nDst += copied
+			}
 			return
 		}
 
-		// copy before nSrc+n
-		copied := copy(dst[nDst:], src[nSrc:nSrc+n])
-		nSrc += copied
+		// copy before nSrc+start
+		copied := copy(dst[nDst:], src[nSrc:nSrc+start])
+		nSrc += start
 		nDst += copied
-		if copied != n {
+		if copied != start {
 			err = transform.ErrShortDst
 			return
 		}
 
-		eng := src[nSrc : nSrc+1+m+1]
+		eng := src[nSrc : end+1]
 		target := eng
 		for _, e := range emojis {
 			if bytes.Compare(eng, e.english) == 0 {
@@ -68,5 +70,24 @@ func (r *Replacer) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err e
 	}
 }
 
+// find emoji markup.
+// When not found, start or end is -1
+func findEmojiMarkupPosition(src []byte) (start, end int) {
+	start = bytes.Index(src, []byte(":"))
+	if start == -1 {
+		return
+	}
+
+	m := bytes.Index(src[start+1:], []byte(":"))
+	if m == -1 {
+		end = -1
+		return
+	}
+
+	end = start + 1 + m
+	return
+}
+
 func (r *Replacer) Reset() {
+	r.preSrc = nil
 }
