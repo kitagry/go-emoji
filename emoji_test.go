@@ -4,12 +4,22 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/kitagry/go-emoji"
 	"golang.org/x/text/transform"
 )
+
+func ExampleReplacer() {
+	r := emoji.NewReplacer()
+	tf := transform.NewReader(strings.NewReader("Hello World:blush:"), r)
+	io.Copy(os.Stdout, tf)
+
+	// Output:
+	// Hello World😊
+}
 
 func TestReplacer(t *testing.T) {
 	tests := map[string]struct {
