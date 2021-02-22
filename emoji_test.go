@@ -25,43 +25,45 @@ func TestReplacer(t *testing.T) {
 	tests := map[string]struct {
 		// input
 		src, dst []byte
+		atEOF    bool
 
 		// output
 		nsrc, ndst int
-		atEOF      bool
 		expected   []byte
+		hasErr     bool
 	}{
 		"normal test": {
 			src:      []byte(":+1:"),
 			dst:      make([]byte, 100),
+			atEOF:    true,
 			nsrc:     4,
 			ndst:     4,
-			atEOF:    true,
 			expected: []byte("👍"),
-		},
-		"another emoji": {
-			src:      []byte(":man_with_turban:"),
-			dst:      make([]byte, 100),
-			nsrc:     17,
-			ndst:     13,
-			atEOF:    true,
-			expected: []byte("👳‍♂️"),
 		},
 		"not found emoji": {
 			src:      []byte(":not found:"),
 			dst:      make([]byte, 100),
+			atEOF:    true,
 			nsrc:     len(":not found:"),
 			ndst:     len(":not found:"),
-			atEOF:    true,
 			expected: []byte(":not found:"),
 		},
 		"text with emoji": {
 			src:      []byte("LGTM:+1:"),
 			dst:      make([]byte, 100),
+			atEOF:    true,
 			nsrc:     8,
 			ndst:     8,
-			atEOF:    true,
 			expected: []byte("LGTM👍"),
+		},
+		"short dist": {
+			src:      []byte("LGTM:+1:"),
+			dst:      make([]byte, 4),
+			atEOF:    true,
+			nsrc:     8,
+			ndst:     4,
+			expected: []byte("LGTM"),
+			hasErr:   true,
 		},
 	}
 
@@ -69,8 +71,10 @@ func TestReplacer(t *testing.T) {
 		t.Run(n, func(t *testing.T) {
 			r := emoji.NewReplacer()
 			ndst, nsrc, err := r.Transform(tt.dst, tt.src, tt.atEOF)
-			if err != nil {
+			if !tt.hasErr && err != nil {
 				t.Errorf("failed to Transform: %+v", err)
+			} else if tt.hasErr && err == nil {
+				t.Errorf("Transform error expected but got nil")
 			}
 
 			if ndst != tt.ndst {

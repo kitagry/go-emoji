@@ -23,25 +23,33 @@ func (r *Replacer) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err e
 		n := bytes.Index(src[nSrc:], colon)
 		// not found
 		if n == -1 {
-			copy(dst[nDst:], src[nSrc:])
-			nDst += len(src[nSrc:])
+			copied := copy(dst[nDst:], src[nSrc:])
+			nSrc += copied
+			nDst += copied
+			if copied != len(src[nSrc:]) {
+				err = transform.ErrShortDst
+			}
 			return
 		}
 
 		m := bytes.Index(src[nSrc+n+1:], colon)
 		// not found
 		if m == -1 {
-			copy(dst[nDst:], src[:n])
-			nSrc += n
-			nDst += n
+			copied := copy(dst[nDst:], src[:n])
+			nSrc += copied
+			nDst += copied
 			err = transform.ErrShortSrc
 			return
 		}
 
 		// copy before nSrc+n
-		copy(dst[nDst:], src[nSrc:nSrc+n])
-		nSrc += n
-		nDst += n
+		copied := copy(dst[nDst:], src[nSrc:nSrc+n])
+		nSrc += copied
+		nDst += copied
+		if copied != n {
+			err = transform.ErrShortDst
+			return
+		}
 
 		eng := src[nSrc : nSrc+1+m+1]
 		target := eng
@@ -50,9 +58,13 @@ func (r *Replacer) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err e
 				target = e.emoji
 			}
 		}
-		copy(dst[nDst:], target)
-		nDst += len(target)
+		copied = copy(dst[nDst:], target)
+		nDst += copied
 		nSrc += len(eng)
+		if copied != len(target) {
+			err = transform.ErrShortDst
+			return
+		}
 	}
 }
 
