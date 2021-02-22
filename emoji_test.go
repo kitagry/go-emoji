@@ -66,13 +66,22 @@ func TestReplacer(t *testing.T) {
 			hasErr:   true,
 		},
 		"not completed emoji": {
-			src:      []byte(":+1"),
+			src:      []byte("hello:+1"),
 			dst:      make([]byte, 100),
 			atEOF:    false,
-			nsrc:     3,
-			ndst:     0,
-			expected: []byte(""),
+			nsrc:     8,
+			ndst:     5,
+			expected: []byte("hello"),
 			hasErr:   true,
+		},
+		"not closed": {
+			src:      []byte(":+1"),
+			dst:      make([]byte, 100),
+			atEOF:    true,
+			nsrc:     3,
+			ndst:     3,
+			expected: []byte(":+1"),
+			hasErr:   false,
 		},
 	}
 
