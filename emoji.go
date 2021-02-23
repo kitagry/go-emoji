@@ -13,9 +13,12 @@ type Replacer struct {
 
 var _ transform.Transformer = (*Replacer)(nil)
 
-func NewReplacer() *Replacer {
+func NewReplacer(customEmojis ...Emoji) *Replacer {
 	mapMarkupToEmoji := make(map[string]Emoji, len(emojis))
 	for _, e := range emojis {
+		mapMarkupToEmoji[string(e.markup)] = e
+	}
+	for _, e := range customEmojis {
 		mapMarkupToEmoji[string(e.markup)] = e
 	}
 	return &Replacer{mapMarkupToEmoji: mapMarkupToEmoji}

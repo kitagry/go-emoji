@@ -1,8 +1,25 @@
 package emoji
 
+import "fmt"
+
 type Emoji struct {
 	emoji  []byte
 	markup []byte
+}
+
+func NewEmoji(emoji, markup []byte) (*Emoji, error) {
+	if len(markup) < 4 {
+		return nil, fmt.Errorf("markup length should be more than 3")
+	}
+
+	if markup[0] != ':' || markup[len(markup)-1] != ':' {
+		return nil, fmt.Errorf("markup should start and end with ':'")
+	}
+
+	return &Emoji{
+		emoji:  emoji,
+		markup: markup,
+	}, nil
 }
 
 var emojis []Emoji = []Emoji{

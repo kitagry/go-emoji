@@ -22,9 +22,15 @@ func ExampleReplacer() {
 }
 
 func TestReplacer(t *testing.T) {
+	customEmoji, err := emoji.NewEmoji([]byte("emo"), []byte(":custom:"))
+	if err != nil {
+		t.Fatalf("failed to create Emoji: %+v", err)
+	}
+
 	tests := map[string]struct {
 		// input
 		src, dst []byte
+		custom   []emoji.Emoji
 		atEOF    bool
 
 		// output
@@ -83,11 +89,23 @@ func TestReplacer(t *testing.T) {
 			expected: []byte(":+1"),
 			hasErr:   false,
 		},
+		"custom emoji": {
+			src: []byte(":custom:"),
+			dst: make([]byte, 100),
+			custom: []emoji.Emoji{
+				*customEmoji,
+			},
+			atEOF:    true,
+			nsrc:     8,
+			ndst:     3,
+			expected: []byte("emo"),
+			hasErr:   false,
+		},
 	}
 
 	for n, tt := range tests {
 		t.Run(n, func(t *testing.T) {
-			r := emoji.NewReplacer()
+			r := emoji.NewReplacer(tt.custom...)
 			ndst, nsrc, err := r.Transform(tt.dst, tt.src, tt.atEOF)
 			if !tt.hasErr && err != nil {
 				t.Errorf("failed to Transform: %+v", err)
