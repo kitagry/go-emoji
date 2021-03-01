@@ -1,3 +1,5 @@
+![test](https://github.com/kitagry/go-emoji/workflows/Test/badge.svg)
+
 ## go-emoji
 
 transform emoji markup to emoji
