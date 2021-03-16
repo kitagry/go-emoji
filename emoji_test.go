@@ -192,6 +192,10 @@ func TestReplacerWithReader(t *testing.T) {
 			r:        strings.NewReader(":+1:"),
 			expected: []byte("👍"),
 		},
+		"Normal replace with text": {
+			r:        strings.NewReader("Hello World:blush:"),
+			expected: []byte("Hello World😊"),
+		},
 	}
 
 	for n, tt := range tests {
